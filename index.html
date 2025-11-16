@@ -193,6 +193,18 @@
             font-weight: 600;
         }
         
+        .debug-info {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
         @media (max-width: 768px) {
             .form-col {
                 flex: 100%;
@@ -412,6 +424,12 @@
                 </div>
             </div>
             
+            <!-- ÁREA DE DEBUG -->
+            <div class="debug-info" id="debugInfo">
+                <strong>Información de Debug:</strong><br>
+                Esperando envío del formulario...
+            </div>
+            
             <div class="btn-container">
                 <button type="submit" class="btn" id="submitBtn">Guardar Registro</button>
             </div>
@@ -420,12 +438,13 @@
 
     <script>
         // URL de tu Google Apps Script Web App 
-        // ⚠️ IMPORTANTE: REEMPLAZA ESTA URL CON LA DE TU SCRIPT DESPLEGADO
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwxpl9DbJDlmTzSFz_S3T81W15uu68AkfHjGgBd7CGOdky9AyWOiLEp1hZ-Ymo-442y/exec';
 
         // Mostrar información del archivo seleccionado
         document.getElementById('archivoPowerPoint').addEventListener('change', function(e) {
             const fileInfo = document.getElementById('fileInfo');
+            const debugInfo = document.getElementById('debugInfo');
+            
             if (this.files.length > 0) {
                 const file = this.files[0];
                 const fileSize = (file.size / (1024 * 1024)).toFixed(2);
@@ -434,9 +453,18 @@
                     Tamaño: <span class="file-size">${fileSize} MB</span><br>
                     Tipo: ${file.type}
                 `;
+                
+                debugInfo.innerHTML = `
+                    <strong>Archivo seleccionado:</strong><br>
+                    📎 Nombre: ${file.name}<br>
+                    📏 Tamaño: ${file.size} bytes (${fileSize} MB)<br>
+                    🔧 Tipo: ${file.type}
+                `;
+                
                 console.log('📎 Archivo seleccionado:', file.name, file.size, 'bytes', file.type);
             } else {
                 fileInfo.innerHTML = 'Formatos aceptados: .ppt, .pptx (Tamaño máximo recomendado: 50MB)';
+                debugInfo.innerHTML = '<strong>Información de Debug:</strong><br>No hay archivo seleccionado';
             }
         });
         
@@ -446,6 +474,7 @@
             const submitBtn = document.getElementById('submitBtn');
             const loading = document.getElementById('loading');
             const message = document.getElementById('message');
+            const debugInfo = document.getElementById('debugInfo');
             
             // Validar archivo
             const fileInput = document.getElementById('archivoPowerPoint');
@@ -462,11 +491,6 @@
                 
                 if (fileSizeMB > 50) {
                     showMessage('El archivo es demasiado grande. Máximo 50MB permitidos.', 'error');
-                    return;
-                }
-                
-                if (!file.type.includes('powerpoint') && !file.name.match(/\.pptx?$/i)) {
-                    showMessage('Tipo de archivo no permitido. Solo se aceptan archivos PowerPoint (.ppt, .pptx).', 'error');
                     return;
                 }
             } else {
@@ -486,6 +510,14 @@
             console.log('   Método: POST');
             console.log('   Con archivo:', !!file);
             
+            // DEBUG: Verificar contenido del FormData
+            let formDataDebug = '<strong>Contenido del FormData:</strong><br>';
+            for (let pair of formData.entries()) {
+                const value = pair[1] instanceof File ? `[ARCHIVO] ${pair[1].name} (${pair[1].size} bytes)` : pair[1];
+                formDataDebug += `• ${pair[0]}: ${value}<br>`;
+            }
+            debugInfo.innerHTML = formDataDebug;
+            
             // Enviar datos a Google Apps Script
             fetch(SCRIPT_URL, {
                 method: 'POST',
@@ -493,27 +525,37 @@
             })
             .then(response => {
                 console.log('📨 Respuesta recibida, status:', response.status);
+                console.log('🔍 Content-Type:', response.headers.get('content-type'));
+                
+                debugInfo.innerHTML += `<br><strong>Respuesta HTTP:</strong><br>Status: ${response.status}<br>Content-Type: ${response.headers.get('content-type')}`;
+                
                 if (!response.ok) {
                     throw new Error('Error HTTP: ' + response.status);
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('✅ Respuesta del servidor:', data);
+                console.log('✅ Respuesta COMPLETA del servidor:', JSON.stringify(data, null, 2));
+                
+                debugInfo.innerHTML += `<br><strong>Respuesta del servidor:</strong><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                
                 if (data.status === 'success') {
                     let successMessage = '✅ Registro guardado exitosamente';
+                    
                     if (data.codigoUnico) {
                         successMessage += `<br>Código único: <strong>${data.codigoUnico}</strong>`;
+                    } else {
+                        successMessage += `<br>⚠️ No se generó código único`;
                     }
-                    if (data.fileUrl) {
-                        successMessage += `<br>📎 Archivo subido correctamente`;
-                        if (data.fileName) {
-                            successMessage += `: ${data.fileName}`;
-                        }
+                    
+                    if (data.fileUrl && data.fileSaved) {
+                        successMessage += `<br>📎 Archivo subido correctamente: ${data.fileName || 'Archivo'}`;
                         successMessage += `<br><a href="${data.fileUrl}" target="_blank">Ver archivo en Drive</a>`;
                     } else {
-                        successMessage += `<br>⚠️ No se subió archivo`;
+                        successMessage += `<br>❌ NO se subió archivo al Drive`;
+                        successMessage += `<br>🔍 El servidor no procesó el archivo multipart`;
                     }
+                    
                     showMessage(successMessage, 'success');
                     this.reset();
                     document.getElementById('fileInfo').innerHTML = 'Formatos aceptados: .ppt, .pptx (Tamaño máximo recomendado: 50MB)';
@@ -531,6 +573,7 @@
             })
             .catch(error => {
                 console.error('💥 Error en el envío:', error);
+                debugInfo.innerHTML += `<br><strong>Error:</strong><br>${error.message}`;
                 showMessage('❌ Error de conexión: ' + error.message, 'error');
             })
             .finally(() => {
