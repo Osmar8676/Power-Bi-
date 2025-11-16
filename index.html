@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Operativos</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .section-title {
+            font-size: 1.2em;
+            color: #3498db;
+            margin: 30px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+        
+        .form-col {
+            flex: 1;
+            padding: 0 10px;
+            min-width: 200px;
+        }
+        
+        .btn-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .required::after {
+            content: " *";
+            color: #e74c3c;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .checkbox-group input {
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .file-input {
+            padding: 8px;
+            border: 2px dashed #ddd;
+            background-color: #fafafa;
+        }
+        
+        .file-input:hover {
+            border-color: #3498db;
+            background-color: #f0f8ff;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            text-align: center;
+            display: none;
+            font-weight: 600;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .file-info {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .file-size {
+            color: #3498db;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .form-col {
+                flex: 100%;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Registro de Operativos</h1>
+        
+        <div id="message" class="message"></div>
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Guardando registro y subiendo archivo...</p>
+        </div>
+        
+        <form id="operativoForm" enctype="multipart/form-data">
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="fecha" class="required">FECHA DEL OPERATIVO</label>
+                        <input type="date" id="fecha" name="fecha" required>
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="hora" class="required">HORA DEL OPERATIVO</label>
+                        <input type="time" id="hora" name="hora" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="direccionInterventora" class="required">DIRECCIÓN INTERVENTORA</label>
+                        <input type="text" id="direccionInterventora" name="direccionInterventora" required>
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="unidadInterventora" class="required">UNIDAD INTERVENTORA</label>
+                        <input type="text" id="unidadInterventora" name="unidadInterventora" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="codigoSubcircuito" class="required">CÓDIGO DE SUBCIRCUITO</label>
+                <input type="text" id="codigoSubcircuito" name="codigoSubcircuito" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="zona" class="required">ZONA</label>
+                        <input type="text" id="zona" name="zona" required>
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="subzona" class="required">SUBZONA</label>
+                        <input type="text" id="subzona" name="subzona" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="distrito" class="required">DISTRITO</label>
+                        <input type="text" id="distrito" name="distrito" required>
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="circuito" class="required">CIRCUITO</label>
+                        <input type="text" id="circuito" name="circuito" required>
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="subcircuito" class="required">SUBCIRCUITO</label>
+                        <input type="text" id="subcircuito" name="subcircuito" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="latitud" class="required">LATITUD</label>
+                        <input type="text" id="latitud" name="latitud" placeholder="Ej: -0.180653" required>
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="longitud" class="required">LONGITUD</label>
+                        <input type="text" id="longitud" name="longitud" placeholder="Ej: -78.467834" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="direccion" class="required">DIRECCIÓN</label>
+                <input type="text" id="direccion" name="direccion" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="presuntoDelito" class="required">PRESUNTO DELITO</label>
+                <input type="text" id="presuntoDelito" name="presuntoDelito" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="extractoCaso" class="required">EXTRACTO DEL CASO</label>
+                <textarea id="extractoCaso" name="extractoCaso" required></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="tipoEjecucion" class="required">TIPO DE EJECUCIÓN DE LA OPERACIÓN</label>
+                        <select id="tipoEjecucion" name="tipoEjecucion" required>
+                            <option value="">Seleccione una opción</option>
+                            <option value="preventiva">Preventiva</option>
+                            <option value="reactiva">Reactiva</option>
+                            <option value="proactiva">Proactiva</option>
+                            <option value="mixta">Mixta</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="tipoCoordinacion" class="required">TIPO DE COORDINACIÓN</label>
+                        <select id="tipoCoordinacion" name="tipoCoordinacion" required>
+                            <option value="">Seleccione una opción</option>
+                            <option value="intrainstitucional">Intrainstitucional</option>
+                            <option value="interinstitucional">Interinstitucional</option>
+                            <option value="comunitaria">Comunitaria</option>
+                            <option value="mixta">Mixta</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="caracterizacion" class="required">CARACTERIZACIÓN DEL APREHENDIDO/DETENIDO</label>
+                <textarea id="caracterizacion" name="caracterizacion" required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="variablesProductividad" class="required">VARIABLES DE PRODUCTIVIDAD</label>
+                <textarea id="variablesProductividad" name="variablesProductividad" required></textarea>
+            </div>
+            
+            <!-- NUEVOS CAMPOS AGREGADOS -->
+            <h3 class="section-title">INFORMACIÓN ADICIONAL</h3>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="ingresarMasIndicadores" name="ingresarMasIndicadores">
+                <label for="ingresarMasIndicadores">DESEA INGRESAR MÁS INDICADORES?</label>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="cedula" class="required">NÚMERO DE CÉDULA</label>
+                        <input type="text" id="cedula" name="cedula" required>
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="grado" class="required">GRADO</label>
+                        <select id="grado" name="grado" required>
+                            <option value="">Seleccione un grado</option>
+                            <option value="general">General</option>
+                            <option value="coronel">Coronel</option>
+                            <option value="teniente">Teniente</option>
+                            <option value="sargento">Sargento</option>
+                            <option value="cabo">Cabo</option>
+                            <option value="policia">Policía</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="nombres" class="required">APELLIDOS Y NOMBRES</label>
+                <input type="text" id="nombres" name="nombres" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="celular" class="required">CELULAR</label>
+                        <input type="tel" id="celular" name="celular" required>
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="correo" class="required">CORREO ELECTRÓNICO</label>
+                        <input type="email" id="correo" name="correo" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="archivoPowerPoint">SELECCIONAR ARCHIVO POWERPOINT</label>
+                <input type="file" id="archivoPowerPoint" name="archivoPowerPoint" accept=".ppt,.pptx" class="file-input">
+                <div class="file-info" id="fileInfo">
+                    Formatos aceptados: .ppt, .pptx (Tamaño máximo recomendado: 50MB)
+                </div>
+            </div>
+            
+            <div class="btn-container">
+                <button type="submit" class="btn" id="submitBtn">Guardar Registro</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // URL de tu Google Apps Script Web App 
+        // ⚠️ IMPORTANTE: REEMPLAZA ESTA URL CON LA DE TU SCRIPT DESPLEGADO
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwxpl9DbJDlmTzSFz_S3T81W15uu68AkfHjGgBd7CGOdky9AyWOiLEp1hZ-Ymo-442y/exec';
+
+        // Mostrar información del archivo seleccionado
+        document.getElementById('archivoPowerPoint').addEventListener('change', function(e) {
+            const fileInfo = document.getElementById('fileInfo');
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+                fileInfo.innerHTML = `
+                    Archivo seleccionado: <strong>${file.name}</strong><br>
+                    Tamaño: <span class="file-size">${fileSize} MB</span><br>
+                    Tipo: ${file.type}
+                `;
+                console.log('📎 Archivo seleccionado:', file.name, file.size, 'bytes', file.type);
+            } else {
+                fileInfo.innerHTML = 'Formatos aceptados: .ppt, .pptx (Tamaño máximo recomendado: 50MB)';
+            }
+        });
+        
+        document.getElementById('operativoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const message = document.getElementById('message');
+            
+            // Validar archivo
+            const fileInput = document.getElementById('archivoPowerPoint');
+            let file = null;
+            
+            if (fileInput.files.length > 0) {
+                file = fileInput.files[0];
+                const fileSizeMB = file.size / (1024 * 1024);
+                
+                console.log('📦 Información del archivo a enviar:');
+                console.log('   Nombre:', file.name);
+                console.log('   Tamaño:', file.size, 'bytes (' + fileSizeMB.toFixed(2) + ' MB)');
+                console.log('   Tipo:', file.type);
+                
+                if (fileSizeMB > 50) {
+                    showMessage('El archivo es demasiado grande. Máximo 50MB permitidos.', 'error');
+                    return;
+                }
+                
+                if (!file.type.includes('powerpoint') && !file.name.match(/\.pptx?$/i)) {
+                    showMessage('Tipo de archivo no permitido. Solo se aceptan archivos PowerPoint (.ppt, .pptx).', 'error');
+                    return;
+                }
+            } else {
+                console.log('⚠️ No se seleccionó archivo');
+            }
+            
+            // Mostrar loading y deshabilitar botón
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            message.style.display = 'none';
+            
+            // Recopilar datos del formulario
+            const formData = new FormData(this);
+            
+            console.log('🚀 Enviando formulario...');
+            console.log('   URL:', SCRIPT_URL);
+            console.log('   Método: POST');
+            console.log('   Con archivo:', !!file);
+            
+            // Enviar datos a Google Apps Script
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('📨 Respuesta recibida, status:', response.status);
+                if (!response.ok) {
+                    throw new Error('Error HTTP: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ Respuesta del servidor:', data);
+                if (data.status === 'success') {
+                    let successMessage = '✅ Registro guardado exitosamente';
+                    if (data.codigoUnico) {
+                        successMessage += `<br>Código único: <strong>${data.codigoUnico}</strong>`;
+                    }
+                    if (data.fileUrl) {
+                        successMessage += `<br>📎 Archivo subido correctamente`;
+                        if (data.fileName) {
+                            successMessage += `: ${data.fileName}`;
+                        }
+                        successMessage += `<br><a href="${data.fileUrl}" target="_blank">Ver archivo en Drive</a>`;
+                    } else {
+                        successMessage += `<br>⚠️ No se subió archivo`;
+                    }
+                    showMessage(successMessage, 'success');
+                    this.reset();
+                    document.getElementById('fileInfo').innerHTML = 'Formatos aceptados: .ppt, .pptx (Tamaño máximo recomendado: 50MB)';
+                    
+                    // Restablecer fecha y hora actual
+                    document.getElementById('fecha').valueAsDate = new Date();
+                    const now = new Date();
+                    const hours = now.getHours().toString().padStart(2, '0');
+                    const minutes = now.getMinutes().toString().padStart(2, '0');
+                    document.getElementById('hora').value = `${hours}:${minutes}`;
+                    
+                } else {
+                    showMessage('❌ Error al guardar: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('💥 Error en el envío:', error);
+                showMessage('❌ Error de conexión: ' + error.message, 'error');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            });
+        });
+        
+        function showMessage(text, type) {
+            const message = document.getElementById('message');
+            message.innerHTML = text;
+            message.className = 'message ' + type;
+            message.style.display = 'block';
+            
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 10000);
+        }
+        
+        // Establecer fecha actual por defecto
+        document.getElementById('fecha').valueAsDate = new Date();
+        
+        // Establecer hora actual por defecto
+        const now = new Date();
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        document.getElementById('hora').value = `${hours}:${minutes}`;
+        
+        // Validación en tiempo real para campos numéricos
+        document.getElementById('cedula').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+        
+        document.getElementById('celular').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    </script>
+</body>
+</html>
